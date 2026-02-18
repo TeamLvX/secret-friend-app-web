@@ -1,110 +1,33 @@
-import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, DollarSign, Users, Gift, PartyPopper, Eye, ArrowLeft, Loader2 } from "lucide-react";
-
-import { toast } from "sonner";
+import {
+  Calendar,
+  DollarSign,
+  Users,
+  Gift,
+  PartyPopper,
+  Eye,
+  ArrowLeft,
+  Loader2,
+} from "lucide-react";
 import Snowfall from "@/components/Snowfall";
 import GiftIcon from "@/components/GiftIcon";
-import PlayerCard from "@/components/PlayerCard";
 import { Button } from "@/components/ui/button";
-import { getAssignmentDetail, getGame, updatePlayer } from "@/api/game.api";
-import { Group } from "@/models/group";
-import { Player } from "@/models/participant";
+import { useViewGame } from "@/hooks/use-view-game";
 
 export const ViewGame = () => {
-  const { gameId } = useParams<{ gameId: string }>();
-  const [game, setGame] = useState<Group | null>(null);
-  const [players, setPlayers] = useState<Player[]>([]);
-  //const [assignments, setAssigments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
-  const [assignedPlayer, setAssignedPlayer] = useState<Player | null>(null);
-  const [revealingAssignment, setRevealingAssignment] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-
-  useEffect(() => {
-    if (gameId) {
-      fetchGameData();
-    }
-  }, [gameId]);
-
-  const fetchGameData = async () => {
-    try {
-
-      const gameDetails = await getGame(gameId);
-
-      setGame(gameDetails);
-      setPlayers(gameDetails.players);
-      //setAssigments(gameDetails.assignments);
-
-    } catch (error) {
-      console.error("Error fetching game:", error);
-      toast.error("Failed to load game details");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRevealAssignment = async () => {
-    if (!selectedPlayerId) {
-      toast.error("Please select your name first");
-      return;
-    }
-
-    setRevealingAssignment(true);
-
-    const selectedPlayer = players.find(player => player.id === selectedPlayerId);
-    
-    if (selectedPlayer.viewed) {
-      toast.error("Assignment already viewed");
-      return
-    }
-
-
-    try {
-      const assigmentDetails = await getAssignmentDetail(gameId, selectedPlayerId);
-      if (!assigmentDetails?.receiver_id) {
-        toast.error("Assignment not found");
-        return;
-      }
-
-      // Update the status to show user has viewed
-      updatePlayer(gameId, assigmentDetails.id, selectedPlayerId);
-
-      // Find the assigned person
-      const assigned = players.find((p) => p.id === assigmentDetails.receiver_id);
-
-      // Delay for suspense
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      setAssignedPlayer(assigned || null);
-      setShowConfetti(true);
-
-      // Update local state
-      setPlayers(
-        players.map((p) =>
-          p.id === selectedPlayerId ? { ...p, viewed: true } : p
-        )
-      );
-
-      setTimeout(() => setShowConfetti(false), 3000);
-    } catch (error) {
-      console.error("Error revealing assignment:", error);
-      toast.error("Failed to reveal assignment");
-    } finally {
-      setRevealingAssignment(false);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  const {
+    loading,
+    game,
+    showConfetti,
+    players,
+    assignedPlayer,
+    selectedPlayerId,
+    setSelectedPlayerId,
+    handleRevealAssignment,
+    revealingAssignment,
+    setAssignedPlayer,
+  } = useViewGame();
 
   if (loading) {
     return (
@@ -224,7 +147,9 @@ export const ViewGame = () => {
           <div className="card-holiday text-center">
             <Calendar size={24} className="mx-auto mb-2 text-accent" />
             <p className="text-xs text-muted-foreground">Exchange</p>
-            <p className="font-semibold text-sm">{new Date(game.exchange_date).toLocaleDateString()}</p>
+            <p className="font-semibold text-sm">
+              {new Date(game.exchange_date).toLocaleDateString()}
+            </p>
           </div>
           <div className="card-holiday text-center">
             <DollarSign size={24} className="mx-auto mb-2 text-holiday-gold" />
@@ -260,15 +185,18 @@ export const ViewGame = () => {
                   <button
                     key={player.id}
                     onClick={() => setSelectedPlayerId(player.id)}
-                    className={`w-full p-3 rounded-xl text-left transition-all flex items-center justify-between ${selectedPlayerId === player.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary/50 hover:bg-secondary"
-                      }`}
+                    className={`w-full p-3 rounded-xl text-left transition-all flex items-center justify-between ${
+                      selectedPlayerId === player.id
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary/50 hover:bg-secondary"
+                    }`}
                   >
                     <span className="font-medium">
                       {player.name}
                       {player.alias && (
-                        <span className="opacity-70 ml-2">"{player.alias}"</span>
+                        <span className="opacity-70 ml-2">
+                          "{player.alias}"
+                        </span>
                       )}
                     </span>
                     {player.viewed && (
@@ -339,7 +267,9 @@ export const ViewGame = () => {
                     <Gift size={16} className="text-accent" />
                     Gift preferences:
                   </p>
-                  <p className="text-foreground">{assignedPlayer.preferences}</p>
+                  <p className="text-foreground">
+                    {assignedPlayer.preferences}
+                  </p>
                 </motion.div>
               )}
               <Button
