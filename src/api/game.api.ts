@@ -25,7 +25,7 @@ export const createGame = async (
 export const getGame = async (gameId: string): Promise<ApiResponse<Group>> => {
   try {
     const response = await apiClient.get<GroupResponseDto>(
-      `/api/v1/game/${gameId}/join`,
+      `/game/${gameId}/join`,
     );
     return {
       data: adaptGetGroupResponseToGroupModel(response.data),
@@ -64,7 +64,7 @@ export const getAssignmentDetail = async (
 ): Promise<ApiResponse<Assignment>> => {
   try {
     const response = await apiClient.get(
-      `/api/v1/game/${groupId}/assignment/${playerId}`,
+      `/game/${groupId}/assignment/${playerId}`,
     );
     return { data: adaptResponseToAssigmentModel(response.data) };
   } catch (error: any) {
